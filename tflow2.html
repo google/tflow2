@@ -1,0 +1,168 @@
+<html>
+    <!--
+    Copyright 2017 Google Inc. All Rights Reserved.
+    Licensed under the Apache License, Version 2.0 (the "License");
+    you may not use this file except in compliance with the License.
+    You may obtain a copy of the License at
+       http://www.apache.org/licenses/LICENSE-2.0
+    Unless required by applicable law or agreed to in writing, software
+    distributed under the License is distributed on an "AS IS" BASIS,
+    WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+    See the License for the specific language governing permissions and
+    limitations under the License.
+    -->
+    <head>
+        <title>tflow Netflow Analyzer</title>
+        <link rel="stylesheet" href="https://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css">
+        <link rel="stylesheet" type="text/css" href="/tflow2.css">
+        <script type="text/javascript" src="https://www.gstatic.com/charts/loader.js"></script>
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+        <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+        <script src="/tflow2.js"></script>
+    </head>
+    <body>
+        <header role="banner">
+            <h1>tflow Netflow Analyzer</h1>
+        </header>
+        <form action="/" method="GET" novalidate id="form">
+            <input type="hidden" id="query" name="query">
+            <script type="text/javascript">
+                query = VAR_QUERY;
+                $("#query").val(JSON.stringify(query));
+            </script>
+        </form>
+        <div id="fs_container">
+            <fieldset>
+                <legend>Netflow Query</legend>
+                <fieldset>
+                    <legend>Filter</legend>
+                    <div class="in">
+                        <label for="time_start">Start</label>
+                        <input type="datetime-local" name="time_start" id="TimeStart">
+                    </div>
+                    <div class="in">
+                        <label for="time_end">End</label>
+                        <input type="datetime-local" name="time_end" id="TimeEnd">
+                    </div>
+                    <div class="in">
+                        <label for="router">Router</label>
+                        <input type="text" name="router" id="Router">
+                    </div>
+                    <div class="in">
+                        <label for "int_in">Interface In</label>
+                        <input type="text" name="int_in" id="IntIn">
+                    </div>
+                    <div class="in">
+                        <label for "int_out">Interface Out</label>
+                        <input type="text" name="int_out" id="IntOut">
+                    </div>
+                    <div class="in">
+                        <label for="src_addr">SRC Address</label>
+                        <input type="text" name="src_addr" id="SrcAddr">
+                    </div>
+                    <div class="in">
+                        <label for="dst_addr">DST Address</label>
+                        <input type="text" name="dst_addr" id="DstAddr">
+                    </div>
+                    <div class="in">
+                        <label for="protocol">Protocol</label>
+                        <input type="text" name="protocol" id="Protocol">
+                    </div>
+                    <div class="in">
+                        <label for="src_port">SRC Port</label>
+                        <input type="text" name="src_port" id="SrcPort">
+                    </div>
+                    <div class="in">
+                        <label for="dst_port">DST Port</label>
+                        <input type="text" name="dst_port" id="DstPort">
+                    </div>
+                    <div class="in">
+                        <label for="next_hop">Next Hop Address</label>
+                        <input type="text" name="next_hop" id="NextHop">
+                    </div>
+                    <div class="in">
+                        <label for="src_asn">SRC ASN</label>
+                        <input type="text" name="src_asn" id="SrcAsn">
+                    </div>
+                    <div class="in">
+                        <label for="dst_asn">DST ASN</label>
+                        <input type="text" name="dst_asn" id="DstAsn">
+                    </div>
+                    <div class="in">
+                        <label for="next_hop_asn">Next Hop ASN</label>
+                        <input type="text" name="next_hop_asn" id="NextHopAsn">
+                    </div>
+                    <div class="in">
+                        <label for="src_pfx">SRC Prefix</label>
+                        <input type="text" name="src_pfx" id="SrcPfx">
+                    </div>
+                    <div class="in">
+                        <label for="dst_pfx">DST Prefix</label>
+                        <input type="text" name="dst_pfx" id="DstPfx">
+                    </div>
+                </fieldset>
+                <fieldset>
+                    <legend>Breakdown</legend>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_src_addr" id="bdSrcAddr" value="1">
+                        <label for="bd_src_addr">SRC Address</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_dst_addr" id="bdDstAddr" value="1">
+                        <label for="bd_dst_addr">DST Address</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_protocol" id="bdProtocol" value="1">
+                        <label for="bd_protocol">Protocol</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_src_port" id="bdSrcPort" value="1">
+                        <label for="bd_src_port">SRC Port</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_dst_port" id="bdDstPort" value="1">
+                        <label for="bd_dst_port">DST Port</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_int_in" id="bdIntIn" value="1">
+                        <label for="bd_int_in">Interface In</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_int_out" id="bdIntOut" value="1">
+                        <label for="bd_int_out">Interface Out</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_next_hop" id="bdNextHop" value="1">
+                        <label for="bd_next_hop">Next Hop Address</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_src_asn" id="bdSrcAsn" value="1">
+                        <label for="bd_src_asn">SRC ASN</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_dst_asn" id="bdDstAsn" value="1">
+                        <label for="bd_dst_asn">DST ASN</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_next_hop_asn" id="bdNextHopAsn" value="1">
+                        <label for="bd_next_hop_asn">Next Hop ASN</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_src_pfx" id="bdSrcPfx" value="1">
+                        <label for="bd_src_pfx">SRC Prefix</label>
+                    </div>
+                    <div class="bd">
+                        <input type="checkbox" name="bd_dst_pfx" id="bdDstPfx" value="1">
+                        <label for="bd_dst_pfx">DST Prefix</label>
+                    </div>
+                </fieldset>
+                <div class="in">
+                    <label for="topn">Aggregate top</label>
+                    <input type="number" min="1" step="1" name="topn" value="15" id="topn">
+                </div>
+            </fieldset>
+            <input type="submit" value="Run Query" id="submit">
+        </div>
+        <div id="chart_div"></div>
+    </body>
+</html>
