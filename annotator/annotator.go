@@ -14,9 +14,10 @@ package annotator
 
 import (
 	"sync/atomic"
-	"tflow2/annotator/bird"
-	"tflow2/netflow"
-	"tflow2/stats"
+
+	"github.com/google/tflow2/annotator/bird"
+	"github.com/google/tflow2/netflow"
+	"github.com/google/tflow2/stats"
 )
 
 // Annotator represents an flow annotator

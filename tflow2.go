@@ -16,11 +16,12 @@ import (
 	"flag"
 	"runtime"
 	"sync"
-	"tflow2/annotator"
-	"tflow2/database"
-	"tflow2/frontend"
-	"tflow2/nfserver"
-	"tflow2/stats"
+
+	"github.com/google/tflow2/annotator"
+	"github.com/google/tflow2/database"
+	"github.com/google/tflow2/frontend"
+	"github.com/google/tflow2/nfserver"
+	"github.com/google/tflow2/stats"
 )
 
 var (

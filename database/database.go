@@ -19,12 +19,12 @@ import (
 	"os"
 	"sync"
 	"sync/atomic"
-	"tflow2/avltree"
-	"tflow2/netflow"
-	"tflow2/nfserver"
 	"time"
 	"unsafe"
 
+	"github.com/google/tflow2/avltree"
+	"github.com/google/tflow2/netflow"
+	"github.com/google/tflow2/nfserver"
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 )
