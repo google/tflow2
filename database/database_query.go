@@ -20,14 +20,13 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"tflow2/avltree"
-	"tflow2/convert"
-	"tflow2/netflow"
-	"tflow2/stats"
 	"time"
-
 	"compress/gzip"
 
+	"github.com/google/tflow2/avltree"
+	"github.com/google/tflow2/convert"
+	"github.com/google/tflow2/netflow"
+	"github.com/google/tflow2/stats"
 	"github.com/golang/glog"
 	"github.com/golang/protobuf/proto"
 )

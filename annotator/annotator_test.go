@@ -13,7 +13,8 @@ package annotator
 
 import (
 	"testing"
-	"tflow2/netflow"
+
+	"github.com/google/tflow2/netflow"
 )
 
 func TestTimestampAggr(t *testing.T) {

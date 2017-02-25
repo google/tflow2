@@ -14,8 +14,9 @@ package nf9
 import (
 	"fmt"
 	"net"
-	"tflow2/convert"
 	"unsafe"
+
+	"github.com/google/tflow2/convert"
 )
 
 const (

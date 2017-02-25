@@ -25,9 +25,9 @@ import (
 	"os"
 	"regexp"
 	"strings"
-	"tflow2/database"
-	"tflow2/stats"
 
+	"github.com/google/tflow2/database"
+	"github.com/google/tflow2/stats"
 	"github.com/golang/glog"
 )
 

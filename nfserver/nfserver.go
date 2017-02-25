@@ -18,11 +18,11 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
-	"tflow2/convert"
-	"tflow2/netflow"
-	"tflow2/nf9"
-	"tflow2/stats"
 
+	"github.com/google/tflow2/convert"
+	"github.com/google/tflow2/netflow"
+	"github.com/google/tflow2/nf9"
+	"github.com/google/tflow2/stats"
 	"github.com/golang/glog"
 )
 
