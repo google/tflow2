@@ -19,11 +19,11 @@ import (
 	"strings"
 	"sync/atomic"
 
+	"github.com/golang/glog"
 	"github.com/google/tflow2/convert"
 	"github.com/google/tflow2/netflow"
 	"github.com/google/tflow2/nf9"
 	"github.com/google/tflow2/stats"
-	"github.com/golang/glog"
 )
 
 // fieldMap describes what information is at what index in the slice
@@ -57,14 +57,18 @@ type NetflowServer struct {
 
 	// debug defines the debug level
 	debug int
+
+	// bgpAugment is used to decide if ASN information from netflow packets should be used
+	bgpAugment bool
 }
 
 // New creates and starts a new `NetflowServer` instance
-func New(listenAddr string, numReaders int, debug int) *NetflowServer {
+func New(listenAddr string, numReaders int, bgpAugment bool, debug int) *NetflowServer {
 	nfs := &NetflowServer{
-		debug:     debug,
-		tmplCache: newTemplateCache(),
-		Output:    make(chan *netflow.Flow),
+		debug:      debug,
+		tmplCache:  newTemplateCache(),
+		Output:     make(chan *netflow.Flow),
+		bgpAugment: bgpAugment,
 	}
 
 	addr, err := net.ResolveUDPAddr("udp", listenAddr)
@@ -175,6 +179,11 @@ func (nfs *NetflowServer) processFlowSet(template *nf9.TemplateRecords, records 
 		fl.DstAddr = convert.Reverse(r.Values[fm.dstAddr])
 		fl.NextHop = convert.Reverse(r.Values[fm.nextHop])
 
+		if !nfs.bgpAugment {
+			fl.SrcAs = convert.Uint32(r.Values[fm.srcAsn])
+			fl.DstAs = convert.Uint32(r.Values[fm.dstAsn])
+		}
+
 		/*if debug > 2 {
 			fl.Packet = packet
 			fl.Template = template.Header.TemplateID
@@ -247,6 +256,10 @@ func generateFieldMap(template *nf9.TemplateRecords) *fieldMap {
 			fm.srcPort = i
 		case nf9.L4DstPort:
 			fm.dstPort = i
+		case nf9.SrcAs:
+			fm.srcAsn = i
+		case nf9.DstAs:
+			fm.dstAsn = i
 		}
 	}
 	return &fm

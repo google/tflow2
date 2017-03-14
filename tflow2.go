@@ -48,7 +48,7 @@ func main() {
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	stats.Init()
 
-	nfs := nfserver.New(*nfAddr, *sockReaders, *debugLevel)
+	nfs := nfserver.New(*nfAddr, *sockReaders, *bgpAugment, *debugLevel)
 	flowDB := database.New(*aggregation, *maxAge, *dbAddWorkers, *samplerate, *debugLevel, *compLevel, *dataDir)
 	annotator.New(nfs.Output, flowDB.Input, *nAggr, *aggregation, *bgpAugment, *birdSock, *birdSock6)
 	frontend.New(*web, *protoNums, flowDB)
