@@ -184,11 +184,9 @@ func (nfs *NetflowServer) processFlowSet(template *nf9.TemplateRecords, records 
 			fl.DstAs = convert.Uint32(r.Values[fm.dstAsn])
 		}
 
-		/*if debug > 2 {
-			fl.Packet = packet
-			fl.Template = template.Header.TemplateID
+		if nfs.debug > 2 {
 			Dump(&fl)
-		}*/
+		}
 
 		nfs.Output <- &fl
 	}
