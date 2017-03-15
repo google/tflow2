@@ -228,8 +228,10 @@ func (fdb *FlowDatabase) loadFromDisc(ts int64, router string, query Query, ch c
 	ymd := fmt.Sprintf("%04d-%02d-%02d", time.Unix(ts, 0).Year(), time.Unix(ts, 0).Month(), time.Unix(ts, 0).Day())
 	filename := fmt.Sprintf("%s/%s/nf-%d-%s.tflow2.pb.gzip", fdb.storage, ymd, ts, router)
 	fh, err := os.Open(filename)
-	if err != nil && fdb.debug > 0 {
-		glog.Errorf("unable to open file: %v", err)
+	if err != nil {
+		if fdb.debug > 0 {
+			glog.Errorf("unable to open file: %v", err)
+		}
 		ch <- nil
 		return
 	}
