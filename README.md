@@ -1,6 +1,6 @@
 # tflow2
 
-tflow2 is an in memory netflow version 9 analyzer.
+tflow2 is an in memory netflow version 9 and IPFIX analyzer.
 It is designed for fast arbitrary queries.
 
 *This software is a work in progress and makes no API stability promises.*
