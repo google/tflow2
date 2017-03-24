@@ -44,6 +44,7 @@ var (
 	debugLevel    = flag.Int("debug", 0, "Debug level, 0: none, 1: +shows if we are receiving flows we are lacking templates for, 2: -, 3: +dump all packets on screen")
 	compLevel     = flag.Int("comp", 6, "gzip compression level for data storage on disk")
 	dataDir       = flag.String("data", "./data", "Path to store long term flow logs")
+	anonymize     = flag.Bool("anonymize", false, "Replace IP addresses with NULL before dumping flows to disk")
 )
 
 func main() {
@@ -59,7 +60,7 @@ func main() {
 	chans = append(chans, nfs.Output)
 	chans = append(chans, ifs.Output)
 
-	flowDB := database.New(*aggregation, *maxAge, *dbAddWorkers, *samplerate, *debugLevel, *compLevel, *dataDir)
+	flowDB := database.New(*aggregation, *maxAge, *dbAddWorkers, *samplerate, *debugLevel, *compLevel, *dataDir, *anonymize)
 
 	annotator.New(chans, flowDB.Input, *nAggr, *aggregation, *bgpAugment, *birdSock, *birdSock6)
 

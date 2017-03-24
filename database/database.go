@@ -22,11 +22,11 @@ import (
 	"time"
 	"unsafe"
 
+	"github.com/golang/glog"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/tflow2/avltree"
 	"github.com/google/tflow2/netflow"
 	"github.com/google/tflow2/nfserver"
-	"github.com/golang/glog"
-	"github.com/golang/protobuf/proto"
 )
 
 // TimeGroup groups all indices to flows of a particular router at a particular
@@ -81,11 +81,12 @@ type FlowDatabase struct {
 	samplerate  int
 	storage     string
 	debug       int
+	anonymize   bool
 	Input       chan *netflow.Flow
 }
 
 // New creates a new FlowDatabase and returns a pointer to it
-func New(aggregation int64, maxAge int64, numAddWorker int, samplerate int, debug int, compLevel int, storage string) *FlowDatabase {
+func New(aggregation int64, maxAge int64, numAddWorker int, samplerate int, debug int, compLevel int, storage string, anonymize bool) *FlowDatabase {
 	flowDB := &FlowDatabase{
 		maxAge:      maxAge,
 		aggregation: aggregation,
@@ -96,6 +97,7 @@ func New(aggregation int64, maxAge int64, numAddWorker int, samplerate int, debu
 		storage:     storage,
 		debug:       debug,
 		flows:       make(FlowsByTimeRtr),
+		anonymize:   anonymize,
 	}
 
 	for i := 0; i < numAddWorker; i++ {
@@ -309,7 +311,9 @@ func (fdb *FlowDatabase) dumpToDisk(ts int64, router string) {
 	fdb.lock.RUnlock()
 
 	flows := &netflow.Flows{}
-	tree.Each(dump, flows)
+
+	tree.Each(dump, fdb.anonymize, flows)
+
 	if fdb.debug > 1 {
 		glog.Warningf("flows contains %d flows", len(flows.Flows))
 	}
@@ -343,13 +347,16 @@ func (fdb *FlowDatabase) dumpToDisk(ts int64, router string) {
 }
 
 func dump(node *avltree.TreeNode, vals ...interface{}) {
-	flows := vals[0].(*netflow.Flows)
+	anonymize := vals[0].(bool)
+	flows := vals[1].(*netflow.Flows)
 	flow := node.Value.(*netflow.Flow)
 	flowcopy := *flow
 
-	// Remove information about particular IP addresses for privacy reason
-	flowcopy.SrcAddr = []byte{0, 0, 0, 0}
-	flowcopy.DstAddr = []byte{0, 0, 0, 0}
+	if anonymize {
+		// Remove information about particular IP addresses for privacy reason
+		flowcopy.SrcAddr = []byte{0, 0, 0, 0}
+		flowcopy.DstAddr = []byte{0, 0, 0, 0}
+	}
 
 	flows.Flows = append(flows.Flows, &flowcopy)
 }

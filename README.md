@@ -32,7 +32,12 @@ these you will always receive an empty result.
 
   Will send logs to stderr on top
 
--bgp=true/false
+-anonymize=bool
+
+  If set to true IP addresses will be replaced with NULL before dumping
+  flows to disk. Default is false.
+
+-bgp=bool
 
   tflow will connect to BIRD and BIRD6 unix domain sockets to augment flows
   with prefix and autonomous system information. This is useful in case your
