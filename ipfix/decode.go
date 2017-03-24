@@ -9,7 +9,7 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package nf9
+package ipfix
 
 import (
 	"fmt"
@@ -24,15 +24,15 @@ const (
 	numPreAllocRecs = 20
 )
 
-// FlowSetIDTemplateMax is the maximum FlowSetID being used for templates according to RFC3954
-const FlowSetIDTemplateMax = 255
+// SetIDTemplateMax is the maximum FlowSetID being used for templates according to RFC3954
+const SetIDTemplateMax = 255
 
-// TemplateFlowSetID is the FlowSetID reserved for template flow sets
-const TemplateFlowSetID = 0
+// TemplateSetID is the set ID reserved for template sets
+const TemplateSetID = 2
 
 // errorIncompatibleVersion prints an error message in case the detected version is not supported
 func errorIncompatibleVersion(version uint16) error {
-	return fmt.Errorf("NF9: Incompatible protocol version v%d, only v9 is supported", version)
+	return fmt.Errorf("IPFIX: Incompatible protocol version v%d, only v10 is supported", version)
 }
 
 // Decode is the main function of this package. It converts raw packet bytes to Packet struct.
@@ -60,7 +60,7 @@ func Decode(raw []byte, remote net.IP) (*Packet, error) {
 	packet.Buffer = buffer[:]
 	packet.Header = (*Header)(headerPtr)
 
-	if packet.Header.Version != 9 {
+	if packet.Header.Version != 10 {
 		return nil, errorIncompatibleVersion(packet.Header.Version)
 	}
 
@@ -68,18 +68,18 @@ func Decode(raw []byte, remote net.IP) (*Packet, error) {
 	packet.Templates = make([]*TemplateRecords, 0, numPreAllocRecs)
 
 	for uintptr(headerPtr) > uintptr(bufferMinPtr) {
-		ptr := unsafe.Pointer(uintptr(headerPtr) - sizeOfFlowSetHeader)
+		ptr := unsafe.Pointer(uintptr(headerPtr) - sizeOfSetHeader)
 
-		fls := &FlowSet{
-			Header: (*FlowSetHeader)(ptr),
+		fls := &Set{
+			Header: (*SetHeader)(ptr),
 		}
 
-		if fls.Header.FlowSetID == TemplateFlowSetID {
+		if fls.Header.SetID == TemplateSetID {
 			// Template
-			decodeTemplate(&packet, ptr, uintptr(fls.Header.Length)-sizeOfFlowSetHeader, remote)
-		} else if fls.Header.FlowSetID > FlowSetIDTemplateMax {
+			decodeTemplate(&packet, ptr, uintptr(fls.Header.Length)-sizeOfSetHeader, remote)
+		} else if fls.Header.SetID > SetIDTemplateMax {
 			// Actual data packet
-			decodeData(&packet, ptr, uintptr(fls.Header.Length)-sizeOfFlowSetHeader)
+			decodeData(&packet, ptr, uintptr(fls.Header.Length)-sizeOfSetHeader)
 		}
 
 		headerPtr = unsafe.Pointer(uintptr(headerPtr) - uintptr(fls.Header.Length))
@@ -90,12 +90,12 @@ func Decode(raw []byte, remote net.IP) (*Packet, error) {
 
 // decodeData decodes a flowSet from `packet`
 func decodeData(packet *Packet, headerPtr unsafe.Pointer, size uintptr) {
-	flsh := (*FlowSetHeader)(unsafe.Pointer(headerPtr))
+	flsh := (*SetHeader)(unsafe.Pointer(headerPtr))
 	data := unsafe.Pointer(uintptr(headerPtr) - uintptr(flsh.Length))
 
-	fls := &FlowSet{
-		Header: flsh,
-		Flows:  (*(*[1<<31 - 1]byte)(data))[sizeOfFlowSetHeader:flsh.Length],
+	fls := &Set{
+		Header:  flsh,
+		Records: (*(*[1<<31 - 1]byte)(data))[sizeOfSetHeader:flsh.Length],
 	}
 
 	packet.FlowSets = append(packet.FlowSets, fls)
@@ -128,9 +128,8 @@ func decodeTemplate(packet *Packet, end unsafe.Pointer, size uintptr, remote net
 // PrintHeader prints the header of `packet`
 func PrintHeader(p *Packet) {
 	fmt.Printf("Version: %d\n", p.Header.Version)
-	fmt.Printf("Count: %d\n", p.Header.Count)
-	fmt.Printf("SysUpTime: %d\n", p.Header.SysUpTime)
-	fmt.Printf("UnixSecs: %d\n", p.Header.UnixSecs)
+	fmt.Printf("Length: %d\n", p.Header.Length)
+	fmt.Printf("UnixSecs: %d\n", p.Header.ExportTime)
 	fmt.Printf("Sequence: %d\n", p.Header.SequenceNumber)
-	fmt.Printf("SourceId: %d\n", p.Header.SourceID)
+	fmt.Printf("DomainId: %d\n", p.Header.DomainID)
 }

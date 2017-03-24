@@ -9,8 +9,8 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-// Package nfserver provides netflow collection services via UDP and passes flows into annotator layer
-package nfserver
+// Package ifserver provides IPFIX collection services via UDP and passes flows into annotator layer
+package ifserver
 
 import (
 	"fmt"
@@ -21,8 +21,8 @@ import (
 
 	"github.com/golang/glog"
 	"github.com/google/tflow2/convert"
+	"github.com/google/tflow2/ipfix"
 	"github.com/google/tflow2/netflow"
-	"github.com/google/tflow2/nf9"
 	"github.com/google/tflow2/stats"
 )
 
@@ -46,8 +46,8 @@ type fieldMap struct {
 	dstPort  int
 }
 
-// NetflowServer represents a Netflow Collector instance
-type NetflowServer struct {
+// IPFIXServer represents a Netflow Collector instance
+type IPFIXServer struct {
 	// tmplCache is used to save received flow templates
 	// for later lookup in order to decode netflow packets
 	tmplCache *templateCache
@@ -63,8 +63,8 @@ type NetflowServer struct {
 }
 
 // New creates and starts a new `NetflowServer` instance
-func New(listenAddr string, numReaders int, bgpAugment bool, debug int) *NetflowServer {
-	nfs := &NetflowServer{
+func New(listenAddr string, numReaders int, bgpAugment bool, debug int) *IPFIXServer {
+	ifs := &IPFIXServer{
 		debug:      debug,
 		tmplCache:  newTemplateCache(),
 		Output:     make(chan *netflow.Flow),
@@ -84,15 +84,15 @@ func New(listenAddr string, numReaders int, bgpAugment bool, debug int) *Netflow
 	// Create goroutines that read netflow packet and process it
 	for i := 0; i < numReaders; i++ {
 		go func(num int) {
-			nfs.packetWorker(num, con)
+			ifs.packetWorker(num, con)
 		}(i)
 	}
 
-	return nfs
+	return ifs
 }
 
 // packetWorker reads netflow packet from socket and handsoff processing to processFlowSets()
-func (nfs *NetflowServer) packetWorker(identity int, conn *net.UDPConn) {
+func (ifs *IPFIXServer) packetWorker(identity int, conn *net.UDPConn) {
 	buffer := make([]byte, 8960)
 	for {
 		length, remote, err := conn.ReadFromUDP(buffer)
@@ -100,8 +100,8 @@ func (nfs *NetflowServer) packetWorker(identity int, conn *net.UDPConn) {
 			glog.Errorf("Error reading from socket: %v", err)
 			continue
 		}
-		atomic.AddUint64(&stats.GlobalStats.Netflow9packets, 1)
-		atomic.AddUint64(&stats.GlobalStats.Netflow9bytes, uint64(length))
+		atomic.AddUint64(&stats.GlobalStats.IPFIXpackets, 1)
+		atomic.AddUint64(&stats.GlobalStats.IPFIXbytes, uint64(length))
 
 		remote.IP = remote.IP.To4()
 		if remote.IP == nil {
@@ -109,34 +109,34 @@ func (nfs *NetflowServer) packetWorker(identity int, conn *net.UDPConn) {
 			continue
 		}
 
-		nfs.processPacket(remote.IP, buffer[:length])
+		ifs.processPacket(remote.IP, buffer[:length])
 	}
 }
 
 // processPacket takes a raw netflow packet, send it to the decoder, updates template cache
 // (if there are templates in the packet) and passes the decoded packet over to processFlowSets()
-func (nfs *NetflowServer) processPacket(remote net.IP, buffer []byte) {
+func (ifs *IPFIXServer) processPacket(remote net.IP, buffer []byte) {
 	length := len(buffer)
-	packet, err := nf9.Decode(buffer[:length], remote)
+	packet, err := ipfix.Decode(buffer[:length], remote)
 	if err != nil {
-		glog.Errorf("nf9packet.Decode: %v", err)
+		glog.Errorf("ipfix.Decode: %v", err)
 		return
 	}
 
-	nfs.updateTemplateCache(remote, packet)
-	nfs.processFlowSets(remote, packet.Header.SourceID, packet.DataFlowSets(), int64(packet.Header.UnixSecs), packet)
+	ifs.updateTemplateCache(remote, packet)
+	ifs.processFlowSets(remote, packet.Header.DomainID, packet.DataFlowSets(), int64(packet.Header.ExportTime), packet)
 }
 
 // processFlowSets iterates over flowSets and calls processFlowSet() for each flow set
-func (nfs *NetflowServer) processFlowSets(remote net.IP, sourceID uint32, flowSets []*nf9.FlowSet, ts int64, packet *nf9.Packet) {
+func (ifs *IPFIXServer) processFlowSets(remote net.IP, domainID uint32, flowSets []*ipfix.Set, ts int64, packet *ipfix.Packet) {
 	addr := remote.String()
 	keyParts := make([]string, 3, 3)
 	for _, set := range flowSets {
-		template := nfs.tmplCache.get(convert.Uint32(remote), sourceID, set.Header.FlowSetID)
+		template := ifs.tmplCache.get(convert.Uint32(remote), domainID, set.Header.SetID)
 
 		if template == nil {
-			templateKey := makeTemplateKey(addr, sourceID, set.Header.FlowSetID, keyParts)
-			if nfs.debug > 0 {
+			templateKey := makeTemplateKey(addr, domainID, set.Header.SetID, keyParts)
+			if ifs.debug > 0 {
 				glog.Warningf("Template for given FlowSet not found: %s", templateKey)
 			}
 			continue
@@ -147,12 +147,12 @@ func (nfs *NetflowServer) processFlowSets(remote net.IP, sourceID uint32, flowSe
 			glog.Warning("Error decoding FlowSet")
 			continue
 		}
-		nfs.processFlowSet(template, records, remote, ts, packet)
+		ifs.processFlowSet(template, records, remote, ts, packet)
 	}
 }
 
 // process generates Flow elements from records and pushes them into the `receiver` channel
-func (nfs *NetflowServer) processFlowSet(template *nf9.TemplateRecords, records []nf9.FlowDataRecord, agent net.IP, ts int64, packet *nf9.Packet) {
+func (ifs *IPFIXServer) processFlowSet(template *ipfix.TemplateRecords, records []ipfix.FlowDataRecord, agent net.IP, ts int64, packet *ipfix.Packet) {
 	fm := generateFieldMap(template)
 
 	for _, r := range records {
@@ -180,16 +180,16 @@ func (nfs *NetflowServer) processFlowSet(template *nf9.TemplateRecords, records 
 		fl.DstAddr = convert.Reverse(r.Values[fm.dstAddr])
 		fl.NextHop = convert.Reverse(r.Values[fm.nextHop])
 
-		if !nfs.bgpAugment {
+		if !ifs.bgpAugment {
 			fl.SrcAs = convert.Uint32(r.Values[fm.srcAsn])
 			fl.DstAs = convert.Uint32(r.Values[fm.dstAsn])
 		}
 
-		if nfs.debug > 2 {
+		if ifs.debug > 2 {
 			Dump(&fl)
 		}
 
-		nfs.Output <- &fl
+		ifs.Output <- &fl
 	}
 }
 
@@ -211,7 +211,7 @@ func Dump(fl *netflow.Flow) {
 }
 
 // DumpTemplate dumps a template on the screen
-func DumpTemplate(tmpl *nf9.TemplateRecords) {
+func DumpTemplate(tmpl *ipfix.TemplateRecords) {
 	fmt.Printf("Template %d\n", tmpl.Header.TemplateID)
 	for rec, i := range tmpl.Records {
 		fmt.Printf("%d: %v\n", i, rec)
@@ -220,44 +220,44 @@ func DumpTemplate(tmpl *nf9.TemplateRecords) {
 
 // generateFieldMap processes a TemplateRecord and populates a fieldMap accordingly
 // the FieldMap can then be used to read fields from a flow
-func generateFieldMap(template *nf9.TemplateRecords) *fieldMap {
+func generateFieldMap(template *ipfix.TemplateRecords) *fieldMap {
 	var fm fieldMap
 	i := -1
 	for _, f := range template.Records {
 		i++
 
 		switch f.Type {
-		case nf9.IPv4SrcAddr:
+		case ipfix.IPv4SrcAddr:
 			fm.srcAddr = i
 			fm.family = 4
-		case nf9.IPv6SrcAddr:
+		case ipfix.IPv6SrcAddr:
 			fm.srcAddr = i
 			fm.family = 6
-		case nf9.IPv4DstAddr:
+		case ipfix.IPv4DstAddr:
 			fm.dstAddr = i
-		case nf9.IPv6DstAddr:
+		case ipfix.IPv6DstAddr:
 			fm.dstAddr = i
-		case nf9.InBytes:
+		case ipfix.InBytes:
 			fm.size = i
-		case nf9.Protocol:
+		case ipfix.Protocol:
 			fm.protocol = i
-		case nf9.InPkts:
+		case ipfix.InPkts:
 			fm.packets = i
-		case nf9.InputSnmp:
+		case ipfix.InputSnmp:
 			fm.intIn = i
-		case nf9.OutputSnmp:
+		case ipfix.OutputSnmp:
 			fm.intOut = i
-		case nf9.IPv4NextHop:
+		case ipfix.IPv4NextHop:
 			fm.nextHop = i
-		case nf9.IPv6NextHop:
+		case ipfix.IPv6NextHop:
 			fm.nextHop = i
-		case nf9.L4SrcPort:
+		case ipfix.L4SrcPort:
 			fm.srcPort = i
-		case nf9.L4DstPort:
+		case ipfix.L4DstPort:
 			fm.dstPort = i
-		case nf9.SrcAs:
+		case ipfix.SrcAs:
 			fm.srcAsn = i
-		case nf9.DstAs:
+		case ipfix.DstAs:
 			fm.dstAsn = i
 		}
 	}
@@ -265,10 +265,10 @@ func generateFieldMap(template *nf9.TemplateRecords) *fieldMap {
 }
 
 // updateTemplateCache updates the template cache
-func (nfs *NetflowServer) updateTemplateCache(remote net.IP, p *nf9.Packet) {
+func (ifs *IPFIXServer) updateTemplateCache(remote net.IP, p *ipfix.Packet) {
 	templRecs := p.GetTemplateRecords()
 	for _, tr := range templRecs {
-		nfs.tmplCache.set(convert.Uint32(remote), tr.Packet.Header.SourceID, tr.Header.TemplateID, *tr)
+		ifs.tmplCache.set(convert.Uint32(remote), tr.Packet.Header.DomainID, tr.Header.TemplateID, *tr)
 	}
 }
 

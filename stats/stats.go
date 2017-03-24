@@ -21,15 +21,18 @@ import (
 
 // Stats represents statistics of this program that are to be exported via /varz
 type Stats struct {
-	StartTime     int64
-	Flows4        uint64
-	Flows6        uint64
-	Packets       uint64
-	Queries       uint64
-	BirdCacheHits uint64
-	BirdCacheMiss uint64
-	FlowPackets   uint64
-	FlowBytes     uint64
+	StartTime       int64
+	Flows4          uint64
+	Flows6          uint64
+	Queries         uint64
+	BirdCacheHits   uint64
+	BirdCacheMiss   uint64
+	FlowPackets     uint64
+	FlowBytes       uint64
+	Netflow9packets uint64
+	Netflow9bytes   uint64
+	IPFIXpackets    uint64
+	IPFIXbytes      uint64
 }
 
 // GlobalStats is instance of `Stats` to keep stats of this program
@@ -46,10 +49,13 @@ func Varz(w http.ResponseWriter) {
 	fmt.Fprintf(w, "netflow_collector_uptime %d\n", now-GlobalStats.StartTime)
 	fmt.Fprintf(w, "netflow_collector_flows4 %d\n", atomic.LoadUint64(&GlobalStats.Flows4))
 	fmt.Fprintf(w, "netflow_collector_flows6 %d\n", atomic.LoadUint64(&GlobalStats.Flows6))
-	fmt.Fprintf(w, "netflow_collector_netflow_packets %d\n", atomic.LoadUint64(&GlobalStats.Packets))
 	fmt.Fprintf(w, "netflow_collector_queries %d\n", atomic.LoadUint64(&GlobalStats.Queries))
 	fmt.Fprintf(w, "netflow_collector_bird_cache_hits %d\n", atomic.LoadUint64(&GlobalStats.BirdCacheHits))
 	fmt.Fprintf(w, "netflow_collector_bird_cache_miss %d\n", atomic.LoadUint64(&GlobalStats.BirdCacheMiss))
 	fmt.Fprintf(w, "netflow_collector_packets %d\n", atomic.LoadUint64(&GlobalStats.FlowPackets))
 	fmt.Fprintf(w, "netflow_collector_bytes %d\n", atomic.LoadUint64(&GlobalStats.FlowBytes))
+	fmt.Fprintf(w, "netflow_collector_netflow9_packets %d\n", atomic.LoadUint64(&GlobalStats.Netflow9packets))
+	fmt.Fprintf(w, "netflow_collector_netflow9_bytes %d\n", atomic.LoadUint64(&GlobalStats.Netflow9bytes))
+	fmt.Fprintf(w, "netflow_collector_ipfix_packets %d\n", atomic.LoadUint64(&GlobalStats.IPFIXpackets))
+	fmt.Fprintf(w, "netflow_collector_ipfix_bytes %d\n", atomic.LoadUint64(&GlobalStats.IPFIXbytes))
 }

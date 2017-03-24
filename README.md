@@ -8,6 +8,7 @@ It is designed for fast arbitrary queries.
 ## Usage
 
 Quick install with `go get -u github.com/google/tflow2`
+and `go build github.com/google/tflow2`
 or download a pre-built binary from the
 [releases page](https://github.com/google/tflow2/releases).
 
@@ -15,8 +16,8 @@ The release binaries have an additional command, `tflow2 -version`,
 which reports the release version.
 
 Once you start the main binary it will start reading netflow version 9 packets
-on port 2055 UDP on all interfaces. For user interaction it starts a webserver
-on port 4444 TCP on all interfaces. 
+on port 2055 UDP and IPFIX packets on port 4739 on all interfaces.
+For user interaction it starts a webserver on port 4444 TCP on all interfaces. 
 
 The webinterface allows you to run queries against the collected data.
 Start time and router are mandatory criteria. If you don't provide any of
@@ -37,6 +38,10 @@ these you will always receive an empty result.
   with prefix and autonomous system information. This is useful in case your
   routers exported netflow data is lacking these. This is the case for example
   if you use the ipt-NETFLOW on Linux.
+
+  BIRD needs a BGP session to each router that is emitting flow packets.
+  The protocol needs to be named like this: "nf_x_y_z_a" with x_y_z_a being the
+  source IP address of flow packets, e.g. nf_185_66_194_0
 
 -birdSock=path
 
@@ -79,7 +84,11 @@ these you will always receive an empty result.
 
 -netflow=addr
 
-  Address to use to receive netflow packets (default ":2055")
+  Address to use to receive netflow packets (default ":2055") via UDP
+
+-ipfix=addr
+
+  Address to use to receive IPFIX packets (default ":4739") via UDP
 
 --protonums=path
 
