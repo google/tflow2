@@ -62,7 +62,7 @@ func main() {
 
 	flowDB := database.New(*aggregation, *maxAge, *dbAddWorkers, *samplerate, *debugLevel, *compLevel, *dataDir, *anonymize)
 
-	annotator.New(chans, flowDB.Input, *nAggr, *aggregation, *bgpAugment, *birdSock, *birdSock6)
+	annotator.New(chans, flowDB.Input, *nAggr, *aggregation, *bgpAugment, *birdSock, *birdSock6, *debugLevel)
 
 	frontend.New(*web, *protoNums, flowDB)
 

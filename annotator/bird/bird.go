@@ -66,14 +66,18 @@ type Annotator struct {
 
 	// connectio to BIRD6
 	bird6 *birdCon
+	
+	// debug level
+	debug int
 }
 
 // NewAnnotator creates a new BIRD annotator and get's service started
-func NewAnnotator(sock string, sock6 string) *Annotator {
+func NewAnnotator(sock string, sock6 string, debug int) *Annotator {
 	a := &Annotator{
 		cache:  newQueryCache(),
 		queryC: make(chan string),
 		resC:   make(chan *QueryResult),
+		debug:  debug,
 	}
 
 	var wg sync.WaitGroup
@@ -260,11 +264,13 @@ func (a *Annotator) gateway() {
 			if i == 0 {
 				parts := strings.Split(line, " ")
 				if len(parts) == 0 {
+					glog.Warningf("unexpected empty output for query '%v'", query)
 					continue
 				}
 				pfx := parts[0]
 				parts = strings.Split(pfx, "-")
 				if len(parts) != 2 {
+					glog.Warningf("unexpected split results for query '%v'", query)
 					continue
 				}
 				pfx = parts[1]
@@ -272,7 +278,7 @@ func (a *Annotator) gateway() {
 				_, tmpNet, err := net.ParseCIDR(pfx)
 				res.Pfx = *tmpNet
 				if err != nil {
-					glog.Warningf("unable to parse CIDR from BIRD: %v", err)
+					glog.Warningf("unable to parse CIDR from BIRD: %v (query '%v')", err, query)
 					continue
 				}
 				continue
@@ -303,7 +309,11 @@ func (a *Annotator) gateway() {
 
 				res.AS = uint32(AS)
 				res.NHAS = uint32(NHAS)
+				break
 			}
+		}
+		if res.AS == 0 && a.debug > 2{
+			glog.Warningf("unable to find AS path for '%v'", query)
 		}
 		a.resC <- &res
 	}

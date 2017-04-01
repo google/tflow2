@@ -28,19 +28,21 @@ type Annotator struct {
 	numWorkers    int
 	bgpAugment    bool
 	birdAnnotator *bird.Annotator
+	debug int
 }
 
 // New creates a new `Annotator` instance
-func New(inputs []chan *netflow.Flow, output chan *netflow.Flow, numWorkers int, aggregation int64, bgpAugment bool, birdSock string, birdSock6 string) *Annotator {
+func New(inputs []chan *netflow.Flow, output chan *netflow.Flow, numWorkers int, aggregation int64, bgpAugment bool, birdSock string, birdSock6 string, debug int) *Annotator {
 	a := &Annotator{
 		inputs:      inputs,
 		output:      output,
 		aggregation: aggregation,
 		numWorkers:  numWorkers,
 		bgpAugment:  bgpAugment,
+		debug:	debug,
 	}
 	if bgpAugment {
-		a.birdAnnotator = bird.NewAnnotator(birdSock, birdSock6)
+		a.birdAnnotator = bird.NewAnnotator(birdSock, birdSock6, debug)
 	}
 	a.Init()
 	return a
