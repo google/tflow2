@@ -280,6 +280,10 @@ func (a *Annotator) gateway() {
 
 			// Find line that contains the AS Path
 			if strings.Contains(line, "BGP.as_path: ") {
+				// Remove curly braces from BIRD AS path (ignores aggregators), e.g. BGP.as_path: 25291 3320 20940 { 16625 }
+				line = strings.Replace(line, "{ ", "", -1)
+				line = strings.Replace(line, " }", "", -1)
+
 				parts := strings.Split(line, "BGP.as_path: ")
 				pathParts := strings.Split(parts[1], " ")
 
