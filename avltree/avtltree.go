@@ -295,6 +295,10 @@ func (t *Tree) Intersection(x *Tree) (res *Tree) {
 // Intersection builds a tree of common elements of all trees in `candidates`
 func Intersection(candidates []*Tree) (res *Tree) {
 	n := len(candidates)
+	if n == 0 {
+		return nil
+	}
+
 	if n == 1 {
 		return candidates[0]
 	}

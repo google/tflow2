@@ -12,6 +12,7 @@
 package database
 
 import (
+	"compress/gzip"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -21,14 +22,13 @@ import (
 	"strings"
 	"sync"
 	"time"
-	"compress/gzip"
 
+	"github.com/golang/glog"
+	"github.com/golang/protobuf/proto"
 	"github.com/google/tflow2/avltree"
 	"github.com/google/tflow2/convert"
 	"github.com/google/tflow2/netflow"
 	"github.com/google/tflow2/stats"
-	"github.com/golang/glog"
-	"github.com/golang/protobuf/proto"
 )
 
 // BreakDownMap defines by what fields data should be broken down in a query
@@ -462,6 +462,10 @@ func (fdb *FlowDatabase) RunQuery(query string) ([][]string, error) {
 			case FieldDstPfx:
 				candidates = append(candidates, fdb.flows[ts][rtr].DstPfx[string(c.Operand)])
 			}
+		}
+
+		if len(candidates) == 0 {
+			candidates = append(candidates, fdb.flows[ts][rtr].Any[0])
 		}
 		fdb.lock.RUnlock()
 
