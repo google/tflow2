@@ -3,7 +3,8 @@
 tflow2 is an in memory netflow version 9 and IPFIX analyzer.
 It is designed for fast arbitrary queries.
 
-*This software is a work in progress and makes no API stability promises.*
+*This software is currently not maintained in this repo. Check out
+https://github.com/taktv6/tflow2*
 
 ## Usage
 
